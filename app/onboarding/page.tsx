@@ -40,7 +40,7 @@ const OnboardingPage = () => {
 
       // 3. Redirect based on role
       if (selectedRole === "manager") {
-        router.push("/auth/host"); // Send to host setup
+        router.push("/dashboard/host");
       } else {
         router.push("/");
       }

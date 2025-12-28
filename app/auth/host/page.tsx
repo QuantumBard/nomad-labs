@@ -49,7 +49,7 @@ const HostAuthPage = () => {
     try {
       if (isLogin) {
         await loginWithEmail(formData.email, formData.password);
-        router.push("/"); // Or host dashboard if implemented
+        router.push("/dashboard/host");
       } else {
         await signUpWithEmail(formData.email, formData.password, {
           user_type: "manager",

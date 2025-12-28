@@ -122,6 +122,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           if (!session.user.user_metadata?.user_type && event === "SIGNED_IN") {
             window.location.href = "/onboarding";
           }
+
+          // Redirect hosts to dashboard if they are on the home page
+          const isPublicView =
+            new URLSearchParams(window.location.search).get("view") ===
+            "public";
+          if (
+            userData.userType === "manager" &&
+            window.location.pathname === "/" &&
+            !isPublicView
+          ) {
+            window.location.href = "/dashboard/host";
+          }
         }
       } else {
         console.log("No session user, clearing state");
