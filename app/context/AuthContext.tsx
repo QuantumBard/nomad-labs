@@ -19,6 +19,7 @@ interface User {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  userType: "traveller" | "manager" | "admin";
 }
 
 interface AuthContextType {
@@ -49,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         supabaseUser.email?.split("@")[0] ||
         null,
       photoURL: supabaseUser.user_metadata?.avatar_url || null,
+      userType: supabaseUser.user_metadata?.user_type || "traveller",
     }),
     []
   );
@@ -64,6 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       photo_url:
         mappedUser.photoURL ||
         `https://api.dicebear.com/7.x/initials/svg?seed=${mappedUser.email}`,
+      user_type: mappedUser.userType,
       updated_at: new Date().toISOString(),
     };
 

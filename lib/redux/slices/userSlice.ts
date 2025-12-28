@@ -5,6 +5,7 @@ interface UserState {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  userType: "traveller" | "manager" | "admin" | null;
   isAuthenticated: boolean;
 }
 
@@ -13,6 +14,7 @@ const initialState: UserState = {
   email: null,
   displayName: null,
   photoURL: null,
+  userType: null,
   isAuthenticated: false,
 };
 
@@ -28,6 +30,7 @@ const userSlice = createSlice({
       state.email = action.payload.email;
       state.displayName = action.payload.displayName;
       state.photoURL = action.payload.photoURL;
+      state.userType = action.payload.userType;
       state.isAuthenticated = !!action.payload.id;
     },
     clearUser: (state) => {
@@ -35,6 +38,7 @@ const userSlice = createSlice({
       state.email = null;
       state.displayName = null;
       state.photoURL = null;
+      state.userType = null;
       state.isAuthenticated = false;
     },
   },
