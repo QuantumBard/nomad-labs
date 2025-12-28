@@ -1,20 +1,24 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { auth, googleProvider, db } from "@/lib/firebase";
+"use client";
+
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { supabase } from "@/lib/supabase";
+import { useAppDispatch } from "@/lib/redux/hooks";
 import {
-  onAuthStateChanged,
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  User as FirebaseUser,
-} from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+  setUser as setReduxUser,
+  clearUser as clearReduxUser,
+} from "@/lib/redux/slices/userSlice";
 
 interface User {
   id: string;
   email: string | null;
   displayName: string | null;
-  photoURL?: string | null;
+  photoURL: string | null;
 }
 
 interface AuthContextType {
@@ -33,56 +37,92 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
 
-  const syncUserToFirestore = async (firebaseUser: FirebaseUser) => {
-    const userRef = doc(db, "users", firebaseUser.uid);
-    await setDoc(
-      userRef,
-      {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        displayName:
-          firebaseUser.displayName || firebaseUser.email?.split("@")[0],
-        photoURL:
-          firebaseUser.photoURL ||
-          `https://api.dicebear.com/7.x/initials/svg?seed=${firebaseUser.email}`,
-        lastLogin: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+  // Helper to map Supabase user to our local User interface
+  const mapSupabaseUser = useCallback(
+    (supabaseUser: any): User => ({
+      id: supabaseUser.id,
+      email: supabaseUser.email || null,
+      displayName:
+        supabaseUser.user_metadata?.full_name ||
+        supabaseUser.email?.split("@")[0] ||
+        null,
+      photoURL: supabaseUser.user_metadata?.avatar_url || null,
+    }),
+    []
+  );
+
+  const syncUserToSupabase = async (supabaseUser: any) => {
+    const mappedUser = mapSupabaseUser(supabaseUser);
+    console.log("Syncing user to Supabase profiles:", mappedUser.id);
+
+    const profileData = {
+      id: mappedUser.id,
+      email: mappedUser.email,
+      display_name: mappedUser.displayName,
+      photo_url:
+        mappedUser.photoURL ||
+        `https://api.dicebear.com/7.x/initials/svg?seed=${mappedUser.email}`,
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
+      const { error: upsertError } = await supabase
+        .from("profiles")
+        .upsert(profileData, { onConflict: "id" });
+
+      if (upsertError?.message.includes("profiles_email_key")) {
+        console.warn("Email conflict detected. Updating by email.");
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update(profileData)
+          .eq("email", mappedUser.email);
+        if (updateError) throw updateError;
+      } else if (upsertError) {
+        throw upsertError;
+      }
+      console.log("✅ User synced successfully");
+    } catch (error: any) {
+      console.error("❌ Sync Error:", error.message);
+    }
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (firebaseUser: FirebaseUser | null) => {
-        if (firebaseUser) {
-          setUser({
-            id: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-          });
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
-      }
-    );
+    // onAuthStateChange fires INITIAL_SESSION immediately on subscription
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth State Change Event:", event);
+      if (session?.user) {
+        const userData = mapSupabaseUser(session.user);
+        setUser(userData);
+        dispatch(setReduxUser(userData));
 
-    return () => unsubscribe();
-  }, []);
+        if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+          await syncUserToSupabase(session.user);
+        }
+      } else {
+        console.log("No session user, clearing state");
+        setUser(null);
+        dispatch(clearReduxUser());
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [dispatch, mapSupabaseUser]);
 
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      const result = await signInWithPopup(auth, googleProvider);
-      if (result.user) {
-        await syncUserToFirestore(result.user);
-      }
-    } catch (error) {
-      console.error("Google Sign-In Error", error);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error("Google Sign-In Error", error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -92,12 +132,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const loginWithEmail = async (email: string, pass: string) => {
     try {
       setLoading(true);
-      const result = await signInWithEmailAndPassword(auth, email, pass);
-      if (result.user) {
-        await syncUserToFirestore(result.user);
-      }
-    } catch (error) {
-      console.error("Login Error", error);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: pass,
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error("Login Error", error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -107,12 +148,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signUpWithEmail = async (email: string, pass: string) => {
     try {
       setLoading(true);
-      const result = await createUserWithEmailAndPassword(auth, email, pass);
-      if (result.user) {
-        await syncUserToFirestore(result.user);
-      }
-    } catch (error) {
-      console.error("Signup Error", error);
+      const { error } = await supabase.auth.signUp({ email, password: pass });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error("Signup Error", error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -120,11 +159,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const signOutUser = async () => {
+    console.log("signOutUser called");
     try {
       setLoading(true);
-      await signOut(auth);
-    } catch (error) {
-      console.error("Sign-Out Error", error);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      console.log("supabase.auth.signOut() successful");
+    } catch (error: any) {
+      console.error("Sign-Out Error", error.message);
     } finally {
       setLoading(false);
     }
