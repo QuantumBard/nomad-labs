@@ -2,13 +2,22 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import { Mail, Lock, Chrome, ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Chrome,
+  ArrowRight,
+  CheckCircle2,
+  User,
+} from "lucide-react";
 import gsap from "gsap";
 
 const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const { user, loginWithEmail, signUpWithEmail, signInWithGoogle, loading } =
@@ -33,11 +42,20 @@ const AuthPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!isLogin && password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
       if (isLogin) {
         await loginWithEmail(email, password);
       } else {
-        await signUpWithEmail(email, password);
+        await signUpWithEmail(email, password, {
+          full_name: username,
+          user_type: "traveller",
+        });
       }
       setSuccess(true);
       setTimeout(() => router.push("/"), 1000);
@@ -135,6 +153,22 @@ const AuthPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
+              {!isLogin && (
+                <div className="relative">
+                  <User
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Username"
+                    className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-1 focus:ring-zinc-400 outline-none dark:text-white transition-all"
+                  />
+                </div>
+              )}
               <div className="relative">
                 <Mail
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
@@ -163,6 +197,22 @@ const AuthPage: React.FC = () => {
                   className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-1 focus:ring-zinc-400 outline-none dark:text-white transition-all"
                 />
               </div>
+              {!isLogin && (
+                <div className="relative">
+                  <Lock
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                    size={18}
+                  />
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm Password"
+                    className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-1 focus:ring-zinc-400 outline-none dark:text-white transition-all"
+                  />
+                </div>
+              )}
             </div>
 
             {error && <p className="text-red-500 text-xs italic">{error}</p>}
@@ -185,14 +235,30 @@ const AuthPage: React.FC = () => {
             </button>
           </form>
 
-          <div className="text-center pt-4">
+          <div className="text-center space-y-4 pt-4">
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+              className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors block w-full"
             >
               {isLogin
                 ? "Don't have an account? Sign up"
                 : "Already have an account? Sign in"}
+            </button>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-zinc-100 dark:border-zinc-900" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-widest text-zinc-400">
+                <span className="bg-white dark:bg-zinc-950 px-2">
+                  For Hosts
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push("/auth/host")}
+              className="text-sm font-medium text-zinc-900 dark:text-white hover:underline transition-all"
+            >
+              Interested in hosting? Sign in or Sign up here
             </button>
           </div>
         </div>

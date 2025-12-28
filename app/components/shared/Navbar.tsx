@@ -89,6 +89,24 @@ const Navbar: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-4">
+          {/* Role-specific Link */}
+          {user?.userType === "traveller" && (
+            <Link
+              href="/auth/host"
+              className="hidden lg:block text-sm font-medium text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-800 px-4 py-2 rounded-full hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
+            >
+              List your home
+            </Link>
+          )}
+          {user?.userType === "manager" && (
+            <Link
+              href="/dashboard/host"
+              className="hidden lg:block text-sm font-medium text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-800 px-4 py-2 rounded-full hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
+            >
+              Host Dashboard
+            </Link>
+          )}
+
           <button
             onClick={toggleTheme}
             className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-600 dark:text-zinc-400"
@@ -149,6 +167,24 @@ const Navbar: React.FC = () => {
               {link.name}
             </Link>
           ))}
+          {user?.userType === "traveller" && (
+            <Link
+              href="/auth/host"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-lg font-medium text-zinc-900 dark:text-white"
+            >
+              List your home
+            </Link>
+          )}
+          {user?.userType === "manager" && (
+            <Link
+              href="/dashboard/host"
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-lg font-medium text-zinc-900 dark:text-white"
+            >
+              Host Dashboard
+            </Link>
+          )}
         </div>
       )}
     </nav>

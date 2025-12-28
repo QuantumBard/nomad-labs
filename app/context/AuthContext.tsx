@@ -20,6 +20,9 @@ interface User {
   displayName: string | null;
   photoURL: string | null;
   userType: "traveller" | "manager" | "admin";
+  businessName: string | null;
+  businessPhone: string | null;
+  isVerified: boolean;
 }
 
 interface AuthContextType {
@@ -28,7 +31,11 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOutUser: () => Promise<void>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
-  signUpWithEmail: (email: string, pass: string) => Promise<void>;
+  signUpWithEmail: (
+    email: string,
+    pass: string,
+    metadata?: any
+  ) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,6 +58,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         null,
       photoURL: supabaseUser.user_metadata?.avatar_url || null,
       userType: supabaseUser.user_metadata?.user_type || "traveller",
+      businessName: supabaseUser.user_metadata?.business_name || null,
+      businessPhone: supabaseUser.user_metadata?.phone || null,
+      isVerified: supabaseUser.user_metadata?.is_verified || false,
     }),
     []
   );
@@ -67,6 +77,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         mappedUser.photoURL ||
         `https://api.dicebear.com/7.x/initials/svg?seed=${mappedUser.email}`,
       user_type: mappedUser.userType,
+      business_name: mappedUser.businessName,
+      business_phone: mappedUser.businessPhone,
+      is_verified: mappedUser.isVerified,
       updated_at: new Date().toISOString(),
     };
 
@@ -104,6 +117,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (event === "SIGNED_IN" || event === "USER_UPDATED") {
           await syncUserToSupabase(session.user);
+
+          // Check if onboarding is needed (for new OAuth users)
+          if (!session.user.user_metadata?.user_type && event === "SIGNED_IN") {
+            window.location.href = "/onboarding";
+          }
         }
       } else {
         console.log("No session user, clearing state");
@@ -148,10 +166,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const signUpWithEmail = async (email: string, pass: string) => {
+  const signUpWithEmail = async (
+    email: string,
+    pass: string,
+    metadata: any = {}
+  ) => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({ email, password: pass });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password: pass,
+        options: {
+          data: {
+            user_type: metadata.user_type || "traveller",
+            full_name: metadata.full_name || email.split("@")[0],
+            ...metadata,
+          },
+        },
+      });
       if (error) throw error;
     } catch (error: any) {
       console.error("Signup Error", error.message);
