@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import {
   LayoutDashboard,
   Home,
@@ -14,10 +15,26 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
+import NewListingDrawer from "../../components/dashboard/NewListingDrawer";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { fetchListings } from "@/lib/redux/slices/listingsSlice";
 
 const HostDashboard = () => {
   const { user } = useAuth();
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const {
+    items: listings,
+    loading,
+    error,
+  } = useAppSelector((state) => state.listings);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      dispatch(fetchListings(user.id));
+    }
+  }, [user, dispatch]);
 
   const stats = [
     {
@@ -29,29 +46,6 @@ const HostDashboard = () => {
     { label: "Active Bookings", value: "24", icon: Calendar, change: "+3" },
     { label: "Total Guests", value: "148", icon: Users, change: "+18" },
     { label: "Avg. Rating", value: "4.9", icon: Star, change: "0.1" },
-  ];
-
-  const listings = [
-    {
-      id: 1,
-      name: "Alpine Zen Retreat",
-      type: "Chalet",
-      status: "Active",
-      price: "$250/night",
-      image:
-        "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&q=80&w=400",
-      bookings: 12,
-    },
-    {
-      id: 2,
-      name: "Urban Loft Sanctuary",
-      type: "Apartment",
-      status: "Active",
-      price: "$180/night",
-      image:
-        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=400",
-      bookings: 8,
-    },
   ];
 
   return (
@@ -74,12 +68,21 @@ const HostDashboard = () => {
             >
               View Public Site
             </button>
-            <button className="flex items-center justify-center space-x-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg">
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg"
+            >
               <Plus size={18} />
               <span>Add New Listing</span>
             </button>
           </div>
         </div>
+
+        {/* New Listing Drawer */}
+        <NewListingDrawer
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+        />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
@@ -125,37 +128,68 @@ const HostDashboard = () => {
                 </button>
               </div>
               <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {listings.map((listing) => (
-                  <div
-                    key={listing.id}
-                    className="p-6 flex items-center gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-                  >
-                    <img
-                      src={listing.image}
-                      alt={listing.name}
-                      className="w-20 h-20 rounded-xl object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-zinc-900 dark:text-white truncate">
-                        {listing.name}
-                      </h4>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        {listing.type} • {listing.price}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-bold uppercase rounded-full">
-                          {listing.status}
-                        </span>
-                        <span className="text-[10px] text-zinc-400 uppercase font-medium">
-                          {listing.bookings} bookings this month
-                        </span>
-                      </div>
-                    </div>
-                    <button className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
-                      <MoreVertical size={20} />
+                {loading ? (
+                  <div className="p-12 text-center text-zinc-500">
+                    Loading your listings...
+                  </div>
+                ) : listings.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <p className="text-zinc-500 mb-4">
+                      You haven't added any listings yet.
+                    </p>
+                    <button
+                      onClick={() => setIsDrawerOpen(true)}
+                      className="text-sm font-medium text-zinc-900 dark:text-white hover:underline"
+                    >
+                      Create your first listing
                     </button>
                   </div>
-                ))}
+                ) : (
+                  listings.map((listing) => (
+                    <div
+                      key={listing.id}
+                      className="p-6 flex items-center gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                    >
+                      <div className="w-20 h-20 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
+                        {listing.photos?.[0] ? (
+                          <img
+                            src={listing.photos[0]}
+                            alt={listing.public_title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Home className="text-zinc-400" size={24} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-zinc-900 dark:text-white truncate">
+                          {listing.public_title}
+                        </h4>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                          {listing.listing_type} • ${listing.base_nightly_rate}
+                          /night
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span
+                            className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-full ${
+                              listing.status === "Active"
+                                ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
+                            }`}
+                          >
+                            {listing.status}
+                          </span>
+                          <span className="text-[10px] text-zinc-400 uppercase font-medium">
+                            {listing.total_inventory} units
+                          </span>
+                        </div>
+                      </div>
+                      <button className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+                        <MoreVertical size={20} />
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
