@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nomad Labs 🏕️
 
-## Getting Started
+Nomad Labs is a premium, state-of-the-art platform designed for the modern digital nomad. It bridges the gap between high-end lodging and the professional traveler, offering a curated experience for both travelers and property managers.
 
-First, run the development server:
+## 🏗️ Technical Architecture (3-Layer Model)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+The application follows a strict 3-layer data architecture to ensure scalability, security, and clear separation of concerns:
+
+1.  **Tier 1: Identity (Users)**
+    - **Source**: `users` table
+    - **Purpose**: Stores the core digital identity (Email, Display Name, Role, Join Date) and mirrors the Supabase Auth state.
+2.  **Tier 2: Persona (Profiles)**
+    - **Source**: `profiles` table
+    - **Purpose**: Stores the optional, rich "Persona" data (Bio, Languages, Social Links, Phone, Preferences).
+3.  **Tier 3: Entities (Businesses / Listings)**
+    - **Source**: `businesses` & `listings` tables
+    - **Purpose**: Professional property management entities and their associated stays/listings.
+
+## 🚀 Tech Stack
+
+- **Frontend**: Next.js 15 (App Router), React 19
+- **Styling**: Tailwind CSS 4, Vanilla CSS (for custom premium aesthetics)
+- **State Management**: Redux Toolkit (thunks for async Supabase interactions)
+- **Backend/Database**: Supabase (Auth, PostgreSQL with RLS, Storage)
+- **Animations**: GSAP, Lucide React icons
+- **Types**: TypeScript (Strict mode)
+
+## ✨ Core Features
+
+- **Premium Onboarding**: Automatic role detection and identity synchronization during signup.
+- **Profile Sanctuary**: A high-end user dashboard to manage digital identity and extended persona with "View" and "Edit" modes.
+- **Host Dashboard**: Complete management suite for property managers to handle businesses and listings.
+- **Secure Authentication**: Google & Email/Password auth powered by Supabase, protected by Row-Level Security (RLS).
+- **Global Router Guard**: Intelligent redirection logic ensuring protected routes (Onboarding, Dashboards) are only accessible to authenticated users.
+
+## 🛠️ Getting Started
+
+### 1. Prerequisites
+
+- Node.js 20+
+- A Supabase Project
+
+### 2. Environment Variables
+
+Create a `.env` file in the root and add your Supabase credentials:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Database Setup (SQL Editor)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The project requires specific SQL triggers to sync Auth metadata to the `users` table.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sql
+-- Example Trigger for User Sync
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, email, display_name, user_type)
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'user_type')
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
 
-## Learn More
+### 4. Installation & Local Development
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Install dependencies
+npm install
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Run the development server
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-## Deploy on Vercel
+## 🚢 Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The easiest way to deploy is via [Vercel](https://vercel.com). Ensure your environment variables are configured in the Vercel dashboard.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+Built with ❤️ by the Nomad Labs Team.
