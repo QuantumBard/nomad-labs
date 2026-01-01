@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { supabase } from "@/lib/supabase";
 
-interface Listing {
+export interface Listing {
   id: string;
   profile_id: string;
   listing_type: string;
@@ -28,12 +28,14 @@ interface Listing {
 interface ListingsState {
   items: Listing[];
   loading: boolean;
+  uploading: boolean;
   error: string | null;
 }
 
 const initialState: ListingsState = {
   items: [],
   loading: false,
+  uploading: false,
   error: null,
 };
 
@@ -49,6 +51,57 @@ export const fetchListings = createAsyncThunk(
 
       if (error) throw error;
       return data as Listing[];
+    } catch (err: any) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const createListing = createAsyncThunk(
+  "listings/createListing",
+  async (
+    {
+      listingData,
+      images,
+      userId,
+    }: { listingData: any; images: File[]; userId: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      // 1. Upload Images
+      const photoUrls: string[] = [];
+      for (const file of images) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `listings/${userId}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("listings")
+          .upload(filePath, file);
+
+        if (!uploadError) {
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from("listings").getPublicUrl(filePath);
+          photoUrls.push(publicUrl);
+        }
+      }
+
+      // 2. Insert Listing
+      const { data, error: insertError } = await supabase
+        .from("listings")
+        .insert({
+          ...listingData,
+          profile_id: userId,
+          photos: photoUrls,
+          status: "Active",
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      return data as Listing;
     } catch (err: any) {
       return rejectWithValue(err.message);
     }
@@ -79,6 +132,18 @@ const listingsSlice = createSlice({
       })
       .addCase(fetchListings.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(createListing.pending, (state) => {
+        state.uploading = true;
+        state.error = null;
+      })
+      .addCase(createListing.fulfilled, (state, action) => {
+        state.uploading = false;
+        state.items.unshift(action.payload);
+      })
+      .addCase(createListing.rejected, (state, action) => {
+        state.uploading = false;
         state.error = action.payload as string;
       });
   },

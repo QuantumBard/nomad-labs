@@ -4,11 +4,13 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { User, Briefcase, ArrowRight } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { useAppDispatch } from "@/store/hooks";
+import { updateOnboarding } from "@/store/features/user/userSlice";
 
 const OnboardingPage = () => {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [selectedRole, setSelectedRole] = useState<
     "traveller" | "manager" | null
   >(null);
@@ -21,28 +23,22 @@ const OnboardingPage = () => {
   }
 
   const handleCompleteOnboarding = async () => {
-    if (!selectedRole) return;
+    if (!selectedRole || !user) return;
     setIsSubmitting(true);
 
     try {
-      // 1. Update Supabase User Metadata
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { user_type: selectedRole },
-      });
-      if (authError) throw authError;
+      const resultAction = await dispatch(
+        updateOnboarding({ userId: user.id, role: selectedRole })
+      );
 
-      // 2. Update Profiles table
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ user_type: selectedRole })
-        .eq("id", user.id);
-      if (profileError) throw profileError;
-
-      // 3. Redirect based on role
-      if (selectedRole === "manager") {
-        router.push("/dashboard/host");
+      if (updateOnboarding.fulfilled.match(resultAction)) {
+        if (selectedRole === "manager") {
+          router.push("/dashboard/host");
+        } else {
+          router.push("/");
+        }
       } else {
-        router.push("/");
+        throw new Error(resultAction.payload as string);
       }
     } catch (error: any) {
       console.error("Onboarding Error:", error.message);

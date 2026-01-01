@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import {
   LayoutDashboard,
   Home,
@@ -16,8 +15,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import NewListingDrawer from "../../components/dashboard/NewListingDrawer";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { fetchListings } from "@/lib/redux/slices/listingsSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { fetchListings } from "@/store/features/listings/listingsSlice";
 
 const HostDashboard = () => {
   const { user } = useAuth();
@@ -39,7 +38,7 @@ const HostDashboard = () => {
   const stats = [
     {
       label: "Total Revenue",
-      value: "$12,450",
+      value: "₹1,24,500",
       icon: TrendingUp,
       change: "+12.5%",
     },
@@ -166,7 +165,7 @@ const HostDashboard = () => {
                           {listing.public_title}
                         </h4>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                          {listing.listing_type} • ${listing.base_nightly_rate}
+                          {listing.listing_type} • ₹{listing.base_nightly_rate}
                           /night
                         </p>
                         <div className="flex items-center gap-2 mt-2">

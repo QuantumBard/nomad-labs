@@ -11,7 +11,7 @@ const STAYS = [
     name: "The Obsidian Retreat",
     location: "Reykjavík, Iceland",
     rating: 4.9,
-    price: "$850",
+    price: "₹70,000",
     image:
       "https://images.unsplash.com/photo-1518732714860-b62714ce0c59?auto=format&fit=crop&q=80&w=800",
   },
@@ -20,7 +20,7 @@ const STAYS = [
     name: "Canyon Mirage",
     location: "Arizona, USA",
     rating: 4.8,
-    price: "$1,200",
+    price: "₹1,00,000",
     image:
       "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&q=80&w=800",
   },
@@ -29,7 +29,7 @@ const STAYS = [
     name: "Verdant Villa",
     location: "Ubud, Bali",
     rating: 5.0,
-    price: "$600",
+    price: "₹50,000",
     image:
       "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&q=80&w=800",
   },
@@ -38,7 +38,7 @@ const STAYS = [
     name: "Alpine Glasshouse",
     location: "Zermatt, Switzerland",
     rating: 4.9,
-    price: "$1,450",
+    price: "₹1,20,000",
     image:
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=800",
   },

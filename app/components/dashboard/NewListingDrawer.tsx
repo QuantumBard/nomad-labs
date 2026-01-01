@@ -10,15 +10,16 @@ import {
   ChevronRight,
   Bed,
   Users,
-  DollarSign,
+  IndianRupee,
   ShieldCheck,
   Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
+import heic2any from "heic2any";
 
 import { useAuth } from "../../context/AuthContext";
-import { supabase } from "@/lib/supabase";
-import { useAppDispatch } from "@/lib/redux/hooks";
-import { addListing } from "@/lib/redux/slices/listingsSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { createListing } from "@/store/features/listings/listingsSlice";
 
 interface NewListingDrawerProps {
   isOpen: boolean;
@@ -31,6 +32,9 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
 }) => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
+  const { uploading, error: reduxError } = useAppSelector(
+    (state) => state.listings
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -51,6 +55,8 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
   const [amenities, setAmenities] = useState<string[]>([]);
   const [viewFromRoom, setViewFromRoom] = useState("City View");
   const [description, setDescription] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   // Prevent scroll when drawer is open
   useEffect(() => {
@@ -80,14 +86,105 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
     );
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      addImages(selectedFiles);
+      // Reset input value to allow selecting the same file again
+      e.target.value = "";
+    }
+  };
+
+  const addImages = async (files: File[]) => {
+    const validFiles = files.filter((file) => {
+      const type = file.type.toLowerCase();
+      const name = file.name.toLowerCase();
+      return (
+        type.startsWith("image/") ||
+        name.endsWith(".heic") ||
+        name.endsWith(".heif")
+      );
+    });
+
+    if (validFiles.length === 0) return;
+
+    for (const file of validFiles) {
+      let fileToProcess = file;
+
+      // Handle HEIC/HEIF conversion
+      if (
+        file.name.toLowerCase().endsWith(".heic") ||
+        file.name.toLowerCase().endsWith(".heif") ||
+        file.type === "image/heic" ||
+        file.type === "image/heif"
+      ) {
+        try {
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.8,
+          });
+
+          // heic2any can return an array if multiple images are in the HEIC
+          const blob = Array.isArray(convertedBlob)
+            ? convertedBlob[0]
+            : convertedBlob;
+
+          fileToProcess = new File(
+            [blob],
+            file.name.replace(/\.(heic|heif)$/i, ".jpg"),
+            { type: "image/jpeg" }
+          );
+        } catch (err) {
+          console.error("HEIC conversion failed:", err);
+          continue; // Skip this file if conversion fails
+        }
+      }
+
+      setImages((prev) => [...prev, fileToProcess]);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(fileToProcess);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files) {
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      addImages(droppedFiles);
+    }
+  };
+
   const handleSaveListing = async () => {
     if (!user) return;
     setLoading(true);
     setError("");
 
     try {
-      const { error: insertError } = await supabase.from("listings").insert({
-        profile_id: user.id,
+      if (!baseRate || isNaN(parseFloat(baseRate))) {
+        throw new Error("Please enter a valid base rate");
+      }
+
+      if (!publicTitle) {
+        throw new Error("Please enter a public title");
+      }
+
+      const listingData = {
         listing_type: listingType,
         gender_policy: listingType === "Hostel Bed" ? genderPolicy : null,
         internal_label: internalLabel,
@@ -104,27 +201,17 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
         amenities: amenities,
         view_from_room: viewFromRoom,
         description: description,
-        status: "Active",
-        created_at: new Date().toISOString(),
-      });
+      };
 
-      if (insertError) throw insertError;
+      const resultAction = await dispatch(
+        createListing({ listingData, images, userId: user.id })
+      );
 
-      // Fetch the newly created listing to get the full object (including ID and timestamps)
-      const { data: newListing, error: fetchError } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("profile_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (!fetchError && newListing) {
-        dispatch(addListing(newListing));
+      if (createListing.fulfilled.match(resultAction)) {
+        onClose();
+      } else {
+        throw new Error(resultAction.payload as string);
       }
-
-      onClose();
-      // Optionally trigger a refresh of listings in the parent
     } catch (err: any) {
       console.error("Error saving listing:", err.message);
       setError(err.message);
@@ -165,9 +252,9 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
 
         {/* Form Content */}
         <div className="flex-1 overflow-y-auto p-8 space-y-12">
-          {error && (
+          {(error || reduxError) && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-xl">
-              {error}
+              {error || reduxError}
             </div>
           )}
           {/* Section 1: Core Identity */}
@@ -409,7 +496,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
                   Base Nightly Rate
                 </label>
                 <div className="relative">
-                  <DollarSign
+                  <IndianRupee
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
                     size={18}
                   />
@@ -459,7 +546,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. $20 after 2 guests"
+                  placeholder="e.g. ₹200 after 2 guests"
                   value={extraGuestCharge}
                   onChange={(e) => setExtraGuestCharge(e.target.value)}
                   className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white outline-none"
@@ -625,7 +712,20 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-4">
                 Photo Gallery
               </label>
-              <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-12 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-900/30 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 transition-all cursor-pointer group">
+              <div
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById("file-upload")?.click()}
+                className="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-12 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-900/30 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 transition-all cursor-pointer group"
+              >
+                <input
+                  id="file-upload"
+                  type="file"
+                  multiple
+                  accept="image/png, image/jpeg, image/jpg, .heic, .heif"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
                 <div className="w-16 h-16 rounded-full bg-white dark:bg-zinc-800 shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Upload className="text-zinc-400" size={24} />
                 </div>
@@ -636,6 +736,32 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
                   Minimum 5 high-quality photos recommended
                 </p>
               </div>
+
+              {imagePreviews.length > 0 && (
+                <div className="mt-6 grid grid-cols-4 gap-4">
+                  {imagePreviews.map((preview, index) => (
+                    <div
+                      key={index}
+                      className="relative aspect-square rounded-xl overflow-hidden group"
+                    >
+                      <img
+                        src={preview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(index);
+                        }}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -680,10 +806,17 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
           </button>
           <button
             onClick={handleSaveListing}
-            disabled={loading}
-            className="flex-[2] py-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold hover:opacity-90 transition-all shadow-lg disabled:opacity-50"
+            disabled={loading || uploading}
+            className="flex-[2] py-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold hover:opacity-90 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? "Saving..." : "Save Listing"}
+            {(loading || uploading) && (
+              <Loader2 size={18} className="animate-spin" />
+            )}
+            {uploading
+              ? "Uploading Images..."
+              : loading
+              ? "Saving..."
+              : "Save Listing"}
           </button>
         </div>
       </div>
