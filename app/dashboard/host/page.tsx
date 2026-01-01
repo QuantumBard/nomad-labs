@@ -11,29 +11,56 @@ import {
   Plus,
   MoreVertical,
   Star,
+  Building2,
+  ChevronRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import NewListingDrawer from "../../components/dashboard/NewListingDrawer";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchListings } from "@/store/features/listings/listingsSlice";
+import { fetchUserBusinesses } from "@/store/features/business/businessSlice";
 
 const HostDashboard = () => {
   const { user } = useAuth();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const {
-    items: listings,
-    loading,
-    error,
-  } = useAppSelector((state) => state.listings);
+  const { items: listings, loading: listingsLoading } = useAppSelector(
+    (state) => state.listings
+  );
+
+  const { businesses, loading: businessesLoading } = useAppSelector(
+    (state) => state.business
+  );
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
 
   useEffect(() => {
     if (user?.id) {
-      dispatch(fetchListings(user.id));
+      dispatch(fetchListings({ profileId: user.id }));
+      dispatch(fetchUserBusinesses(user.id));
     }
   }, [user, dispatch]);
+
+  const handleAddListing = () => {
+    if (businesses.length === 0) {
+      router.push("/dashboard/host/businesses");
+      return;
+    }
+    // If only one business, auto-select it
+    if (businesses.length === 1) {
+      setSelectedBusinessId(businesses[0].id);
+      setIsDrawerOpen(true);
+    } else {
+      // For now, default to the first one or we could show a modal selector
+      // Improved: Redirect to businesses page if multiple to select context,
+      // OR just pick the first one for simplicity in this iteration.
+      // Let's pick the first one and show a toast/alert ideally, but here we just open it.
+      setSelectedBusinessId(businesses[0].id);
+      setIsDrawerOpen(true);
+    }
+  };
 
   const stats = [
     {
@@ -62,13 +89,20 @@ const HostDashboard = () => {
           </div>
           <div className="flex items-center gap-4">
             <button
+              onClick={() => router.push("/dashboard/host/businesses")}
+              className="px-6 py-3 border border-zinc-200 dark:border-zinc-800 rounded-xl font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all flex items-center gap-2"
+            >
+              <Building2 size={18} />
+              My Businesses
+            </button>
+            <button
               onClick={() => router.push("/?view=public")}
               className="px-6 py-3 border border-zinc-200 dark:border-zinc-800 rounded-xl font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all"
             >
               View Public Site
             </button>
             <button
-              onClick={() => setIsDrawerOpen(true)}
+              onClick={handleAddListing}
               className="flex items-center justify-center space-x-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg"
             >
               <Plus size={18} />
@@ -78,10 +112,13 @@ const HostDashboard = () => {
         </div>
 
         {/* New Listing Drawer */}
-        <NewListingDrawer
-          isOpen={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
-        />
+        {selectedBusinessId && (
+          <NewListingDrawer
+            isOpen={isDrawerOpen}
+            onClose={() => setIsDrawerOpen(false)}
+            businessId={selectedBusinessId}
+          />
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
@@ -117,17 +154,81 @@ const HostDashboard = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content - Listings */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Businesses Quick View */}
             <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
               <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">
-                  Your Listings
+                  Your Businesses
+                </h2>
+                <button
+                  onClick={() => router.push("/dashboard/host/businesses")}
+                  className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors flex items-center gap-1"
+                >
+                  Manage <ChevronRight size={14} />
+                </button>
+              </div>
+              <div className="p-6">
+                {businessesLoading ? (
+                  <div className="text-center text-zinc-500 py-4">
+                    Loading businesses...
+                  </div>
+                ) : businesses.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-zinc-500 mb-2">
+                      No businesses registered yet.
+                    </p>
+                    <button
+                      onClick={() => router.push("/dashboard/host/businesses")}
+                      className="text-indigo-600 font-medium hover:underline"
+                    >
+                      Register your first property
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {businesses.slice(0, 2).map((biz) => (
+                      <div
+                        key={biz.id}
+                        className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800 hover:border-zinc-300 transition-colors cursor-pointer"
+                        onClick={() =>
+                          router.push(`/dashboard/host/businesses/${biz.id}`)
+                        }
+                      >
+                        <h3 className="font-semibold text-zinc-900 dark:text-white">
+                          {biz.name}
+                        </h3>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          {biz.city}, {biz.state}
+                        </p>
+                        <div className="mt-3 flex items-center gap-2">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold ${
+                              biz.status === "published"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-zinc-200 text-zinc-600"
+                            }`}
+                          >
+                            {biz.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+              <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">
+                  Recent Listings
                 </h2>
                 <button className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
                   View All
                 </button>
               </div>
               <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {loading ? (
+                {listingsLoading ? (
                   <div className="p-12 text-center text-zinc-500">
                     Loading your listings...
                   </div>
@@ -137,14 +238,14 @@ const HostDashboard = () => {
                       You haven't added any listings yet.
                     </p>
                     <button
-                      onClick={() => setIsDrawerOpen(true)}
+                      onClick={handleAddListing}
                       className="text-sm font-medium text-zinc-900 dark:text-white hover:underline"
                     >
                       Create your first listing
                     </button>
                   </div>
                 ) : (
-                  listings.map((listing) => (
+                  listings.slice(0, 5).map((listing) => (
                     <div
                       key={listing.id}
                       className="p-6 flex items-center gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"

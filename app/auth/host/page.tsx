@@ -30,17 +30,11 @@ const HostAuthPage = () => {
     email: "",
     password: "",
     fullName: "",
-    businessName: "",
-    phone: "",
-    propertyAddress: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const handleNext = () => setStep(step + 1);
-  const handleBack = () => setStep(step - 1);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,10 +48,6 @@ const HostAuthPage = () => {
         await signUpWithEmail(formData.email, formData.password, {
           user_type: "manager",
           full_name: formData.fullName,
-          business_name: formData.businessName,
-          phone: formData.phone,
-          property_address: formData.propertyAddress,
-          requires_verification: true,
         });
         setStep(4); // Success step
       }
@@ -74,33 +64,8 @@ const HostAuthPage = () => {
       <div className="max-w-md w-full bg-white dark:bg-zinc-900 rounded-3xl shadow-xl p-8 border border-zinc-200 dark:border-zinc-800">
         {step < 4 && (
           <div className="mb-8">
-            {!isLogin && (
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
-                  Step {step} of 3
-                </span>
-                <div className="flex space-x-1">
-                  {[1, 2, 3].map((s) => (
-                    <div
-                      key={s}
-                      className={`h-1 w-8 rounded-full transition-colors ${
-                        s <= step
-                          ? "bg-zinc-900 dark:bg-white"
-                          : "bg-zinc-200 dark:bg-zinc-800"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
             <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">
-              {isLogin
-                ? "Host Sign In"
-                : step === 1
-                ? "Create your host account"
-                : step === 2
-                ? "Business details"
-                : "Property info"}
+              {isLogin ? "Host Sign In" : "Create your host account"}
             </h1>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
               {isLogin
@@ -209,108 +174,19 @@ const HostAuthPage = () => {
                       placeholder="••••••••"
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="w-full py-4 mt-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity"
-                  >
-                    <span>Continue</span>
-                    <ArrowRight size={18} />
-                  </button>
-                </div>
-              )}
-
-              {step === 2 && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Business Name
-                    </label>
-                    <input
-                      type="text"
-                      name="businessName"
-                      required
-                      value={formData.businessName}
-                      onChange={handleInputChange}
-                      className="w-full pl-4 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all"
-                      placeholder="Nomad Retreats Ltd."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Business Phone
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      required
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full pl-4 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all"
-                      placeholder="+1 (555) 000-0000"
-                    />
-                  </div>
-                  <div className="flex space-x-3 mt-4">
-                    <button
-                      type="button"
-                      onClick={handleBack}
-                      className="flex-1 py-4 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleNext}
-                      className="flex-[2] py-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity"
-                    >
-                      <span>Continue</span>
-                      <ArrowRight size={18} />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {step === 3 && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Primary Property Address
-                    </label>
-                    <input
-                      type="text"
-                      name="propertyAddress"
-                      required
-                      value={formData.propertyAddress}
-                      onChange={handleInputChange}
-                      className="w-full pl-4 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all"
-                      placeholder="123 Alpine Way, Switzerland"
-                    />
-                  </div>
-                  <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/30 text-amber-800 dark:text-amber-200 text-xs leading-relaxed">
-                    <strong>Note:</strong> Your account will be subject to
-                    manual review. You will be able to set up your listing
-                    immediately, but it will go live after verification.
-                  </div>
                   {error && (
                     <p className="text-red-500 text-xs italic">{error}</p>
                   )}
-                  <div className="flex space-x-3 mt-4">
-                    <button
-                      type="button"
-                      onClick={handleBack}
-                      className="flex-1 py-4 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-[2] py-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity disabled:opacity-50"
-                    >
-                      <span>{loading ? "Creating..." : "Complete Setup"}</span>
-                      {!loading && <ArrowRight size={18} />}
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4 mt-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    <span>
+                      {loading ? "Creating account..." : "Start Hosting"}
+                    </span>
+                    {!loading && <ArrowRight size={18} />}
+                  </button>
                 </div>
               )}
 
@@ -320,7 +196,7 @@ const HostAuthPage = () => {
                     <CheckCircle2 size={40} />
                   </div>
                   <h2 className="text-2xl font-semibold text-zinc-900 dark:text-white mb-2">
-                    Application Received
+                    Signup Successful
                   </h2>
                   <p className="text-zinc-500 dark:text-zinc-400 mb-8">
                     We've sent a verification email to{" "}

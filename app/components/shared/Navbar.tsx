@@ -11,13 +11,24 @@ const Navbar: React.FC = () => {
   const { user, signOutUser } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownOpen && !(e.target as Element).closest(".relative")) {
+        setDropdownOpen(false);
+      }
+    };
+
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    window.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   const navLinks = [
     { name: "Stays", path: "/" },
@@ -115,22 +126,60 @@ const Navbar: React.FC = () => {
           </button>
 
           {user ? (
-            <div className="flex items-center space-x-4">
+            <div className="relative flex items-center gap-4">
+              {/* User Dropdown Trigger */}
               <button
-                onClick={signOutUser}
-                className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="group flex items-center gap-2 p-1 pl-1 pr-1 sm:pr-2 rounded-full border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer"
               >
-                <LogOut size={20} />
+                <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                  <img
+                    src={
+                      user.photoURL ||
+                      `https://api.dicebear.com/7.x/initials/svg?seed=${user.displayName}`
+                    }
+                    alt="avatar"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="hidden sm:block text-zinc-400">
+                  <Menu size={16} />
+                </div>
               </button>
-              <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden border border-zinc-300 dark:border-zinc-700">
-                <img
-                  src={
-                    user.photoURL ||
-                    `https://api.dicebear.com/7.x/initials/svg?seed=${user.displayName}`
-                  }
-                  alt="avatar"
-                />
-              </div>
+
+              {/* Dropdown Menu */}
+              {dropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-52 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 py-2">
+                  <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-900 mb-2">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
+                      {user.displayName}
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                      {user.email}
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/dashboard/profile"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                  >
+                    <User size={16} />
+                    <span>Visit Profile</span>
+                  </Link>
+
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      signOutUser();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                  >
+                    <LogOut size={16} />
+                    <span>Log out</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <Link

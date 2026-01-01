@@ -41,13 +41,25 @@ const initialState: ListingsState = {
 
 export const fetchListings = createAsyncThunk(
   "listings/fetchListings",
-  async (profileId: string, { rejectWithValue }) => {
+  async (
+    { profileId, businessId }: { profileId?: string; businessId?: string },
+    { rejectWithValue }
+  ) => {
     try {
-      const { data, error } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("profile_id", profileId)
-        .order("created_at", { ascending: false });
+      let query = supabase.from("listings").select("*");
+
+      if (businessId) {
+        query = query.eq("business_id", businessId);
+      } else if (profileId) {
+        // Fallback for legacy or user-based lookups
+        query = query.eq("profile_id", profileId);
+      } else {
+        throw new Error("Most provide either businessId or profileId");
+      }
+
+      const { data, error } = await query.order("created_at", {
+        ascending: false,
+      });
 
       if (error) throw error;
       return data as Listing[];
@@ -64,46 +76,81 @@ export const createListing = createAsyncThunk(
       listingData,
       images,
       userId,
-    }: { listingData: any; images: File[]; userId: string },
+      businessId,
+    }: { listingData: any; images: File[]; userId: string; businessId: string },
     { rejectWithValue }
   ) => {
     try {
+      if (!businessId)
+        throw new Error("Business ID is required to create a listing.");
+
+      // Verify Business Exists/Access (Optional but good safety)
+      const { data: business, error: businessCheckError } = await supabase
+        .from("businesses")
+        .select("id")
+        .eq("id", businessId)
+        .single();
+
+      if (businessCheckError || !business) {
+        throw new Error("Invalid Business ID. Please report this issue.");
+      }
+
       // 1. Upload Images
       const photoUrls: string[] = [];
+      // console.log("images", images);
+
       for (const file of images) {
         const fileExt = file.name.split(".").pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `listings/${userId}/${fileName}`;
+        const fileName = `${Math.random()
+          .toString(36)
+          .substring(2)}.${fileExt}`;
+        const filePath = `listings/${businessId}/${fileName}`; // Use business ID for deeper org
 
         const { error: uploadError } = await supabase.storage
           .from("listings")
           .upload(filePath, file);
 
-        if (!uploadError) {
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from("listings").getPublicUrl(filePath);
-          photoUrls.push(publicUrl);
+        if (uploadError) {
+          console.error("Image upload error:", uploadError);
+          throw new Error(`Failed to upload images: ${uploadError.message}`);
         }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("listings").getPublicUrl(filePath);
+        photoUrls.push(publicUrl);
       }
+      // console.log("photoUrls", photoUrls);
 
       // 2. Insert Listing
-      const { data, error: insertError } = await supabase
+      // listing_type is required by DB check constraint
+      // profile_id is kept for legacy/ownership tracking depending on DB schema,
+      // but business_id is the new primary grouping.
+      const response = await supabase
         .from("listings")
         .insert({
           ...listingData,
+          business_id: businessId,
+          // profile_id: userId, // Can keep or remove depending on if you dropped the column.
+          // Including it ensures backward compat if the column is still NOT NULL
           profile_id: userId,
           photos: photoUrls,
-          status: "Active",
+          status: "Active", // or 'inactive' based on your new schema default
           created_at: new Date().toISOString(),
+          total_units: listingData.total_units || 1,
         })
         .select()
         .single();
 
-      if (insertError) throw insertError;
-      return data as Listing;
+      if (response.error) {
+        console.error("Listing insert error:", response.error);
+        throw response.error;
+      }
+
+      return response.data as Listing;
     } catch (err: any) {
-      return rejectWithValue(err.message);
+      console.error("Error in createListing thunk:", err);
+      return rejectWithValue(err.message || "An unknown error occurred");
     }
   }
 );

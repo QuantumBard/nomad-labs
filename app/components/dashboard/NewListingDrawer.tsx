@@ -15,7 +15,6 @@ import {
   Image as ImageIcon,
   Loader2,
 } from "lucide-react";
-import heic2any from "heic2any";
 
 import { useAuth } from "../../context/AuthContext";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -24,11 +23,13 @@ import { createListing } from "@/store/features/listings/listingsSlice";
 interface NewListingDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  businessId: string;
 }
 
 const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
   isOpen,
   onClose,
+  businessId,
 }) => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
@@ -108,15 +109,35 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
 
     if (validFiles.length === 0) return;
 
+    // Dynamically import heic2any only when needed (client-side)
+    let heic2any: any;
+    const hasHeic = validFiles.some(
+      (file) =>
+        file.name.toLowerCase().endsWith(".heic") ||
+        file.name.toLowerCase().endsWith(".heif") ||
+        file.type === "image/heic" ||
+        file.type === "image/heif"
+    );
+
+    if (hasHeic) {
+      try {
+        const mod = await import("heic2any");
+        heic2any = mod.default;
+      } catch (err) {
+        console.error("Failed to load heic2any:", err);
+      }
+    }
+
     for (const file of validFiles) {
       let fileToProcess = file;
 
       // Handle HEIC/HEIF conversion
       if (
-        file.name.toLowerCase().endsWith(".heic") ||
-        file.name.toLowerCase().endsWith(".heif") ||
-        file.type === "image/heic" ||
-        file.type === "image/heif"
+        (file.name.toLowerCase().endsWith(".heic") ||
+          file.name.toLowerCase().endsWith(".heif") ||
+          file.type === "image/heic" ||
+          file.type === "image/heif") &&
+        heic2any
       ) {
         try {
           const convertedBlob = await heic2any({
@@ -172,6 +193,11 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
 
   const handleSaveListing = async () => {
     if (!user) return;
+    if (!businessId) {
+      setError("No business selected. Please refresh or select a business.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -204,7 +230,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
       };
 
       const resultAction = await dispatch(
-        createListing({ listingData, images, userId: user.id })
+        createListing({ listingData, images, userId: user.id, businessId })
       );
 
       if (createListing.fulfilled.match(resultAction)) {

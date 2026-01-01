@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { supabase } from "@/lib/supabase";
+import { syncUserIdentity } from "../user/userSlice";
 
 interface AuthState {
   loading: boolean;
@@ -55,10 +56,11 @@ export const signUpWithEmail = createAsyncThunk(
       pass,
       metadata = {},
     }: { email: string; pass: string; metadata?: any },
-    { rejectWithValue }
+    { rejectWithValue, dispatch }
   ) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log("Starting signUpWithEmail for:", email);
+      const { data, error } = await supabase.auth.signUp({
         email,
         password: pass,
         options: {
@@ -69,8 +71,49 @@ export const signUpWithEmail = createAsyncThunk(
           },
         },
       });
-      if (error) throw error;
+
+      if (error) {
+        console.error("Supabase Auth Signup Error:", error);
+        throw error;
+      }
+
+      console.log("Supabase Auth Signup Success, User ID:", data.user?.id);
+
+      // Sync to users table immediately if signup was successful
+      if (data.user) {
+        const userData = {
+          id: data.user.id,
+          email: data.user.email,
+          displayName:
+            data.user.user_metadata?.full_name ||
+            data.user.email?.split("@")[0] ||
+            null,
+          photoURL: data.user.user_metadata?.avatar_url || null,
+          userType: data.user.user_metadata?.user_type || "traveller",
+          isVerified:
+            !!data.user.email_confirmed_at ||
+            data.user.user_metadata?.email_verified ||
+            data.user.user_metadata?.is_verified ||
+            false,
+        };
+
+        console.log("Dispatching syncUserIdentity for:", userData.email);
+
+        try {
+          // IMPORTANT: Awaiting here to ensure it completes or fails visibly
+          await dispatch(syncUserIdentity(userData)).unwrap();
+          console.log("Identity sync successful after signup");
+        } catch (syncErr: any) {
+          console.error(
+            "Identity sync failed after signup (in thunk):",
+            syncErr
+          );
+        }
+      }
+
+      return data;
     } catch (err: any) {
+      console.error("Signup error in authSlice:", err);
       return rejectWithValue(err.message);
     }
   }
