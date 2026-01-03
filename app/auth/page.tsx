@@ -81,10 +81,10 @@ const AuthPage: React.FC = () => {
             size={64}
             className="mx-auto text-green-500 animate-bounce"
           />
-          <h2 className="text-2xl font-serif text-zinc-900 dark:text-white">
+          <h2 className="text-2xl font-abril text-zinc-900 dark:text-white">
             Welcome to the Club
           </h2>
-          <p className="text-zinc-500 dark:text-zinc-400">
+          <p className="text-zinc-600 dark:text-zinc-400 font-antonio">
             Redirecting you to the sanctuary...
           </p>
         </div>
@@ -93,7 +93,7 @@ const AuthPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 pt-20">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-background pt-20">
       {/* Left - Hero Image */}
       <div className="hidden lg:block relative overflow-hidden bg-zinc-900">
         <img
@@ -103,11 +103,11 @@ const AuthPage: React.FC = () => {
         />
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="max-w-md text-white">
-            <h2 className="text-5xl font-serif mb-6 leading-tight">
+            <h2 className="text-5xl font-abril mb-6 leading-tight">
               Your gateway to the world's most{" "}
               <span className="italic">exclusive</span> stays.
             </h2>
-            <p className="text-zinc-300 font-light text-lg">
+            <p className="text-zinc-300 font-antonio text-lg">
               Join a global community of mindful travelers and gain access to
               curated hidden gems.
             </p>
@@ -116,13 +116,13 @@ const AuthPage: React.FC = () => {
       </div>
 
       {/* Right - Form */}
-      <div className="flex items-center justify-center p-6 bg-white dark:bg-zinc-950">
+      <div className="flex items-center justify-center p-6 bg-background">
         <div ref={formRef} className="w-full max-w-md space-y-8">
           <div className="text-center lg:text-left">
-            <h1 className="text-3xl font-serif text-zinc-900 dark:text-white mb-2">
+            <h1 className="text-3xl font-abril text-foreground mb-2">
               {isLogin ? "Sign In" : "Create Account"}
             </h1>
-            <p className="text-zinc-500 dark:text-zinc-400 font-light">
+            <p className="text-foreground/60 font-antonio">
               {isLogin
                 ? "Welcome back, traveler."
                 : "Begin your journey with Nomad Labs today."}
@@ -133,7 +133,7 @@ const AuthPage: React.FC = () => {
             <button
               onClick={handleGoogle}
               disabled={loading}
-              className="flex items-center justify-center space-x-3 w-full py-3 px-4 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all font-medium text-zinc-700 dark:text-zinc-300 disabled:opacity-50"
+              className="flex items-center justify-center space-x-3 w-full py-3 px-4 border border-zinc-300 dark:border-zinc-700 rounded-xl dark:hover:bg-zinc-500 transition-all font-anta text-xs uppercase tracking-widest font-bold text-zinc-700 dark:text-zinc-200 disabled:opacity-50 bg-transparent"
             >
               <Chrome size={20} />
               <span>Continue with Google</span>
@@ -145,7 +145,7 @@ const AuthPage: React.FC = () => {
               <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-zinc-950 px-4 text-zinc-400 tracking-widest">
+              <span className="bg-background px-4 text-foreground/40 tracking-widest font-anta">
                 Or email
               </span>
             </div>
@@ -165,7 +165,7 @@ const AuthPage: React.FC = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Username"
-                    className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-1 focus:ring-zinc-400 outline-none dark:text-white transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-accent focus:border-transparent outline-none text-foreground font-antonio transition-all"
                   />
                 </div>
               )}
@@ -180,7 +180,7 @@ const AuthPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email Address"
-                  className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-1 focus:ring-zinc-400 outline-none dark:text-white transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-accent focus:border-transparent outline-none text-foreground font-antonio transition-all"
                 />
               </div>
               <div className="relative">
@@ -194,7 +194,7 @@ const AuthPage: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Password"
-                  className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-1 focus:ring-zinc-400 outline-none dark:text-white transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-accent focus:border-transparent outline-none text-foreground font-antonio transition-all"
                 />
               </div>
               {!isLogin && (
@@ -209,18 +209,22 @@ const AuthPage: React.FC = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm Password"
-                    className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-1 focus:ring-zinc-400 outline-none dark:text-white transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-accent focus:border-transparent outline-none text-foreground font-antonio transition-all"
                   />
                 </div>
               )}
             </div>
 
-            {error && <p className="text-red-500 text-xs italic">{error}</p>}
+            {error && (
+              <p className="text-red-600 dark:text-red-400 text-sm font-antonio">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity shadow-lg disabled:opacity-50"
+              className="w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-anta uppercase tracking-widest text-xs font-bold flex items-center justify-center space-x-2 hover:opacity-90 transition-all shadow-lg disabled:opacity-50"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -238,7 +242,7 @@ const AuthPage: React.FC = () => {
           <div className="text-center space-y-4 pt-4">
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors block w-full"
+              className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors block w-full font-antonio"
             >
               {isLogin
                 ? "Don't have an account? Sign up"
@@ -248,15 +252,13 @@ const AuthPage: React.FC = () => {
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-zinc-100 dark:border-zinc-900" />
               </div>
-              <div className="relative flex justify-center text-[10px] uppercase tracking-widest text-zinc-400">
-                <span className="bg-white dark:bg-zinc-950 px-2">
-                  For Hosts
-                </span>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-widest text-foreground/40 font-anta">
+                <span className="bg-background px-2">For Hosts</span>
               </div>
             </div>
             <button
               onClick={() => router.push("/auth/host")}
-              className="text-sm font-medium text-zinc-900 dark:text-white hover:underline transition-all"
+              className="text-sm font-anta uppercase tracking-wider text-foreground hover:text-accent transition-all"
             >
               Interested in hosting? Sign in or Sign up here
             </button>

@@ -60,14 +60,14 @@ const HostAuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6">
-      <div className="max-w-md w-full bg-white dark:bg-zinc-900 rounded-3xl shadow-xl p-8 border border-zinc-200 dark:border-zinc-800">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+      <div className="max-w-md w-full bg-background rounded-3xl shadow-xl p-8 border border-zinc-300 dark:border-zinc-700">
         {step < 4 && (
           <div className="mb-8">
-            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">
+            <h1 className="text-2xl font-abril text-foreground">
               {isLogin ? "Host Sign In" : "Create your host account"}
             </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+            <p className="text-sm text-foreground/60 font-antonio mt-2">
               {isLogin
                 ? "Welcome back to your business sanctuary."
                 : "Join our community of world-class hosts."}
@@ -79,7 +79,7 @@ const HostAuthPage = () => {
           {isLogin ? (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                <label className="block text-xs font-anta uppercase tracking-wider text-foreground/70 mb-1">
                   Email
                 </label>
                 <div className="relative">
@@ -93,13 +93,13 @@ const HostAuthPage = () => {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
                     placeholder="john@business.com"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                <label className="block text-xs font-anta uppercase tracking-wider text-foreground/70 mb-1">
                   Password
                 </label>
                 <div className="relative">
@@ -113,16 +113,20 @@ const HostAuthPage = () => {
                     required
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
                     placeholder="••••••••"
                   />
                 </div>
               </div>
-              {error && <p className="text-red-500 text-xs italic">{error}</p>}
+              {error && (
+                <p className="text-red-600 dark:text-red-400 text-sm font-antonio">
+                  {error}
+                </p>
+              )}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 mt-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full py-4 mt-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-anta uppercase tracking-widest text-xs font-bold flex items-center justify-center space-x-2 hover:opacity-90 transition-all disabled:opacity-50"
               >
                 <span>{loading ? "Signing in..." : "Sign In as Host"}</span>
                 {!loading && <ArrowRight size={18} />}
@@ -133,7 +137,7 @@ const HostAuthPage = () => {
               {step === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-xs font-anta uppercase tracking-wider text-foreground/70 mb-1">
                       Full Name
                     </label>
                     <input
@@ -142,12 +146,12 @@ const HostAuthPage = () => {
                       required
                       value={formData.fullName}
                       onChange={handleInputChange}
-                      className="w-full pl-4 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all"
+                      className="w-full pl-4 pr-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
                       placeholder="John Doe"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-xs font-anta uppercase tracking-wider text-foreground/70 mb-1">
                       Email
                     </label>
                     <input
@@ -156,12 +160,12 @@ const HostAuthPage = () => {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full pl-4 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all"
+                      className="w-full pl-4 pr-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
                       placeholder="john@business.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                    <label className="block text-xs font-anta uppercase tracking-wider text-foreground/70 mb-1">
                       Password
                     </label>
                     <input
@@ -170,17 +174,19 @@ const HostAuthPage = () => {
                       required
                       value={formData.password}
                       onChange={handleInputChange}
-                      className="w-full pl-4 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white outline-none transition-all"
+                      className="w-full pl-4 pr-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
                       placeholder="••••••••"
                     />
                   </div>
                   {error && (
-                    <p className="text-red-500 text-xs italic">{error}</p>
+                    <p className="text-red-600 dark:text-red-400 text-sm font-antonio">
+                      {error}
+                    </p>
                   )}
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-4 mt-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="w-full py-4 mt-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-anta uppercase tracking-widest text-xs font-bold flex items-center justify-center space-x-2 hover:opacity-90 transition-all disabled:opacity-50"
                   >
                     <span>
                       {loading ? "Creating account..." : "Start Hosting"}
@@ -195,10 +201,10 @@ const HostAuthPage = () => {
                   <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-6">
                     <CheckCircle2 size={40} />
                   </div>
-                  <h2 className="text-2xl font-semibold text-zinc-900 dark:text-white mb-2">
+                  <h2 className="text-2xl font-abril text-foreground mb-2">
                     Signup Successful
                   </h2>
-                  <p className="text-zinc-500 dark:text-zinc-400 mb-8">
+                  <p className="text-foreground/60 font-antonio mb-8">
                     We've sent a verification email to{" "}
                     <strong>{formData.email}</strong>. Please confirm your email
                     to start setting up your property.
@@ -206,7 +212,7 @@ const HostAuthPage = () => {
                   <button
                     type="button"
                     onClick={() => router.push("/")}
-                    className="w-full py-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium hover:opacity-90 transition-opacity"
+                    className="w-full py-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-anta uppercase tracking-widest text-xs font-bold hover:opacity-90 transition-all"
                   >
                     Return Home
                   </button>
@@ -224,7 +230,7 @@ const HostAuthPage = () => {
                 setStep(1);
                 setError("");
               }}
-              className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors block w-full"
+              className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors block w-full font-antonio"
             >
               {isLogin
                 ? "Don't have a host account? Sign up"
@@ -235,16 +241,14 @@ const HostAuthPage = () => {
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-zinc-100 dark:border-zinc-800" />
               </div>
-              <div className="relative flex justify-center text-[10px] uppercase tracking-widest text-zinc-400">
-                <span className="bg-white dark:bg-zinc-900 px-2">
-                  Not a host?
-                </span>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-widest text-foreground/40 font-anta">
+                <span className="bg-background px-2">Not a host?</span>
               </div>
             </div>
 
             <button
               onClick={() => router.push("/auth")}
-              className="text-sm font-medium text-zinc-900 dark:text-white hover:underline transition-all"
+              className="text-sm font-anta uppercase tracking-wider text-foreground hover:text-accent transition-all"
             >
               Sign up as a traveller instead
             </button>

@@ -18,7 +18,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const saved = localStorage.getItem("nomad-theme");
     if (saved === "dark" || saved === "light") {
-      setTheme(saved as Theme);
+      setTheme(saved);
     } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
       setTheme("dark");
     }

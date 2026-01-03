@@ -11,7 +11,7 @@ export interface Listing {
   total_inventory: number;
   max_occupancy_adults: number;
   max_occupancy_children: number;
-  bed_configuration: any;
+  bed_configuration: Record<string, any> | string | null;
   bathroom_type: string;
   base_nightly_rate: number;
   weekend_markup: boolean;

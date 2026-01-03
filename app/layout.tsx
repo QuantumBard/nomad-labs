@@ -1,15 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { Abril_Fatface, Antonio, Anta } from "next/font/google";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const abril = Abril_Fatface({
+  variable: "--font-abril",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+const antonio = Antonio({
+  variable: "--font-antonio",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const anta = Anta({
+  variable: "--font-anta",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -21,6 +27,8 @@ import { Providers } from "./Providers";
 import Navbar from "./components/shared/Navbar";
 import Footer from "./components/shared/Footer";
 
+import "./globals.css";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${abril.variable} ${antonio.variable} ${anta.variable} antialiased`}
         suppressHydrationWarning
       >
         <Providers>
