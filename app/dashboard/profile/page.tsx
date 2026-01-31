@@ -23,7 +23,7 @@ import { fetchProfile, updateProfile } from "@/store/features/user/userSlice";
 import { supabase } from "@/lib/supabase";
 
 const ProfilePage = () => {
-  const { user, showToast } = useAuth();
+  const { user, showToast, loading: authLoading } = useAuth();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const reduxUserState = useAppSelector((state) => state.user);
@@ -44,15 +44,13 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasFetchedProfile = useRef(false);
 
   useEffect(() => {
-    // Router Guard: If not loading and no user, go home
-    if (!reduxLoading && !user) {
-      router.push("/");
-      return;
-    }
-
-    if (user?.id) {
+    // Only fetch profile once when user.id is available
+    // AuthContext handles the redirect logic globally, so we don't need to check here
+    if (user?.id && !hasFetchedProfile.current) {
+      hasFetchedProfile.current = true;
       dispatch(fetchProfile(user.id))
         .unwrap()
         .then((data) => {
@@ -67,9 +65,22 @@ const ProfilePage = () => {
             language: persona?.language || "",
             phoneNumber: persona?.phone_number || "",
           });
+        })
+        .catch((error) => {
+          console.error("Failed to fetch profile:", error);
+          hasFetchedProfile.current = false; // Reset on error to allow retry
         });
     }
-  }, [user, reduxLoading, dispatch, router]);
+  }, [user?.id, dispatch]);
+
+  // Show loading state while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+      </div>
+    );
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -79,28 +90,28 @@ const ProfilePage = () => {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    console.log("e.target", e.target.files);
+    const file = e.target?.files?.[0];
     if (!file || !user?.id) return;
-
     setUploading(true);
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}-avatar-${Date.now()}.${fileExt}`;
-      const filePath = `profiles/${fileName}`;
+      const fileName = `avatar.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("profiles")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
+      const response = await supabase.storage
+        .from("profiles") // The bucket name
+        .upload(filePath, file); // filePath starts with user.id/̉̉
+      console.log("response", response);
+      if (response.error) throw response.error;
 
       const {
         data: { publicUrl },
       } = supabase.storage.from("profiles").getPublicUrl(filePath);
-
+      console.log("publicUrl", publicUrl);
       await dispatch(
         updateProfile({
-          updates: { display_name: formData.displayName, photo_url: publicUrl },
+          updates: { photo_url: publicUrl },
           type: "identity",
         })
       ).unwrap();
@@ -163,15 +174,15 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pt-24 pb-12">
+    <div className="min-h-screen bg-background pt-24 pb-12">
       <div className="max-w-4xl mx-auto px-6">
         {/* Header Section */}
         <div className="flex items-center justify-between mb-12">
           <div>
-            <h1 className="text-4xl font-serif text-zinc-900 dark:text-white">
+            <h1 className="text-4xl font-abril text-foreground">
               Profile Sanctuary
             </h1>
-            <p className="text-zinc-500 dark:text-zinc-400 mt-2">
+            <p className="text-foreground/60 font-antonio mt-2">
               {isEditing
                 ? "Refining your personal identity and persona."
                 : "Your digital identity in the Nomad world."}
@@ -180,7 +191,7 @@ const ProfilePage = () => {
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="group flex items-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-medium hover:bg-zinc-900 hover:text-white dark:hover:bg-white dark:hover:text-zinc-900 transition-all shadow-sm"
+              className="group flex items-center gap-2 px-6 py-3 bg-background border border-zinc-300 dark:border-zinc-700 rounded-2xl text-xs font-anta uppercase tracking-widest font-bold hover:bg-foreground hover:text-background transition-all shadow-sm"
             >
               <Edit2
                 size={16}
@@ -198,9 +209,9 @@ const ProfilePage = () => {
             className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
           >
             {/* Avatar Section */}
-            <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 flex items-center gap-8">
+            <div className="bg-background p-8 rounded-3xl border border-zinc-300 dark:border-zinc-700 flex items-center gap-8">
               <div className="relative group shrink-0">
-                <div className="w-28 h-28 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 border-4 border-white dark:border-zinc-950 shadow-xl">
+                <div className="w-28 h-28 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 border-4 border-background shadow-xl">
                   <img
                     src={
                       formData.photoURL ||
@@ -230,10 +241,10 @@ const ProfilePage = () => {
                 />
               </div>
               <div>
-                <h3 className="font-semibold text-xl text-zinc-900 dark:text-white mb-1">
+                <h3 className="font-anta uppercase tracking-wider text-sm text-foreground mb-1">
                   Profile Picture
                 </h3>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs">
+                <p className="text-sm text-foreground/60 font-antonio max-w-xs">
                   A premium photograph enhances trust within the community.
                 </p>
               </div>
@@ -242,37 +253,37 @@ const ProfilePage = () => {
             {/* Form Fields */}
             <div className="grid gap-8">
               {/* Tier 1: Identity */}
-              <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 space-y-6 shadow-sm">
+              <div className="bg-background p-8 rounded-3xl border border-zinc-300 dark:border-zinc-700 space-y-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <ShieldCheck className="text-zinc-400" size={20} />
-                  <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">
+                  <h2 className="text-xl font-abril text-foreground">
                     Core Identity
                   </h2>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-500">
+                  <label className="text-xs font-anta uppercase tracking-wider text-foreground/70">
                     Display Name
                   </label>
                   <input
                     name="displayName"
                     value={formData.displayName}
                     onChange={handleInputChange}
-                    className="w-full p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all font-medium"
+                    className="w-full p-4 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                   />
                 </div>
               </div>
 
               {/* Tier 2: Persona */}
-              <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 space-y-8 shadow-sm">
+              <div className="bg-background p-8 rounded-3xl border border-zinc-300 dark:border-zinc-700 space-y-8 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <Globe className="text-zinc-400" size={20} />
-                  <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">
+                  <h2 className="text-xl font-abril text-foreground">
                     Extended Persona
                   </h2>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-500">
+                  <label className="text-xs font-anta uppercase tracking-wider text-foreground/70">
                     Bio
                   </label>
                   <textarea
@@ -281,13 +292,13 @@ const ProfilePage = () => {
                     onChange={handleInputChange}
                     rows={4}
                     placeholder="Share your story..."
-                    className="w-full p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all resize-none italic"
+                    className="w-full p-4 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all resize-none"
                   />
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-500">
+                    <label className="text-xs font-anta uppercase tracking-wider text-foreground/70">
                       Languages
                     </label>
                     <input
@@ -295,11 +306,11 @@ const ProfilePage = () => {
                       value={formData.language}
                       onChange={handleInputChange}
                       placeholder="e.g. English, French"
-                      className="w-full p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white transition-all"
+                      className="w-full p-4 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-500">
+                    <label className="text-xs font-anta uppercase tracking-wider text-foreground/70">
                       Phone Number
                     </label>
                     <input
@@ -307,13 +318,13 @@ const ProfilePage = () => {
                       value={formData.phoneNumber}
                       onChange={handleInputChange}
                       placeholder="+1 (555) 000-0000"
-                      className="w-full p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white transition-all"
+                      className="w-full p-4 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-6 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                  <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                  <h3 className="text-xs font-anta uppercase tracking-widest text-foreground/40">
                     Social Presence
                   </h3>
                   <div className="grid md:grid-cols-3 gap-6">
@@ -325,7 +336,7 @@ const ProfilePage = () => {
                         name="instagram"
                         value={formData.instagram}
                         onChange={handleInputChange}
-                        className="w-full p-3 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm"
+                        className="w-full p-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio text-sm outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                       />
                     </div>
                     <div className="space-y-2">
@@ -336,7 +347,7 @@ const ProfilePage = () => {
                         name="twitter"
                         value={formData.twitter}
                         onChange={handleInputChange}
-                        className="w-full p-3 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm"
+                        className="w-full p-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio text-sm outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                       />
                     </div>
                     <div className="space-y-2">
@@ -347,7 +358,7 @@ const ProfilePage = () => {
                         name="facebook"
                         value={formData.facebook}
                         onChange={handleInputChange}
-                        className="w-full p-3 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm"
+                        className="w-full p-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-transparent text-foreground font-antonio text-sm outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                       />
                     </div>
                   </div>
@@ -360,14 +371,14 @@ const ProfilePage = () => {
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-8 py-4 text-zinc-500 font-medium hover:text-zinc-900 dark:hover:text-white transition-colors"
+                className="px-8 py-4 text-foreground/60 font-antonio hover:text-foreground transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex items-center justify-center gap-2 px-10 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl font-bold hover:opacity-90 transition-all shadow-xl disabled:opacity-50 min-w-[200px]"
+                className="flex items-center justify-center gap-2 px-10 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl font-anta uppercase tracking-widest text-xs font-bold hover:opacity-90 transition-all shadow-xl disabled:opacity-50 min-w-[200px]"
               >
                 {saving ? (
                   <Loader2 size={20} className="animate-spin" />
@@ -384,7 +395,7 @@ const ProfilePage = () => {
           /* DISPLAY VIEW */
           <div className="space-y-8 animate-in fade-in duration-700">
             {/* Main Info Card */}
-            <div className="bg-white dark:bg-zinc-900 p-10 rounded-[2.5rem] border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none overflow-hidden relative">
+            <div className="bg-background p-10 rounded-[2.5rem] border border-zinc-300 dark:border-zinc-700 shadow-xl shadow-zinc-200/50 dark:shadow-none overflow-hidden relative">
               <div className="absolute top-0 right-0 w-32 h-32 bg-zinc-100 dark:bg-zinc-800/50 rounded-bl-full opacity-30" />
 
               <div className="flex flex-col md:flex-row items-center md:items-start gap-10 relative">
@@ -402,7 +413,7 @@ const ProfilePage = () => {
 
                 <div className="flex-1 space-y-6 text-center md:text-left">
                   <div>
-                    <h2 className="text-4xl font-serif text-zinc-900 dark:text-white mb-2">
+                    <h2 className="text-4xl font-abril text-foreground mb-2">
                       {formData.displayName || "Anonymous Nomad"}
                     </h2>
                     <div className="flex items-center justify-center md:justify-start gap-4 text-zinc-500 dark:text-zinc-400">
@@ -419,7 +430,7 @@ const ProfilePage = () => {
                     </div>
                   </div>
 
-                  <p className="text-zinc-600 dark:text-zinc-300 text-lg leading-relaxed italic max-w-xl font-light">
+                  <p className="text-foreground/70 dark:text-foreground/80 text-lg leading-relaxed font-antonio max-w-xl">
                     “
                     {formData.bio ||
                       "Crafting a unique story in every destination. No bio provided yet, but the journey continues."}
@@ -433,7 +444,7 @@ const ProfilePage = () => {
                         {formData.language}
                       </div>
                     )}
-                    <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/10 rounded-full text-xs font-semibold text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/30">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/10 rounded-full text-xs font-semibold text-primary dark:text-primary border border-green-100 dark:border-green-900/30">
                       <ShieldCheck size={14} />
                       Verified Member
                     </div>
@@ -482,11 +493,11 @@ const ProfilePage = () => {
 
             {/* Account Insights (Placeholder for further features) */}
             <div className="grid md:grid-cols-3 gap-6">
-              <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2rem] border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">
+              <div className="bg-background p-8 rounded-4xl border border-zinc-300 dark:border-zinc-700 shadow-sm">
+                <span className="text-[10px] uppercase tracking-widest text-foreground/40 font-anta">
                   Member Since
                 </span>
-                <p className="text-xl text-zinc-900 dark:text-white mt-1">
+                <p className="text-xl text-foreground mt-1 font-antonio">
                   {reduxUserState.joinedAt
                     ? new Date(reduxUserState.joinedAt).toLocaleDateString(
                         "en-US",
@@ -495,17 +506,17 @@ const ProfilePage = () => {
                     : "January 2026"}
                 </p>
               </div>
-              <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2rem] border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">
+              <div className="bg-background p-8 rounded-4xl border border-zinc-300 dark:border-zinc-700 shadow-sm">
+                <span className="text-[10px] uppercase tracking-widest text-foreground/40 font-anta">
                   {user?.userType === "manager" ? "Stays Hosted" : "Bookings"}
                 </span>
-                <p className="text-xl text-zinc-900 dark:text-white mt-1">0</p>
+                <p className="text-xl text-foreground mt-1 font-antonio">0</p>
               </div>
-              <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2rem] border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">
+              <div className="bg-background p-8 rounded-4xl border border-zinc-300 dark:border-zinc-700 shadow-sm">
+                <span className="text-[10px] uppercase tracking-widest text-foreground/40 font-anta">
                   Achievements
                 </span>
-                <p className="text-xl text-zinc-900 dark:text-white mt-1">
+                <p className="text-xl text-foreground mt-1 font-antonio">
                   First Nomad
                 </p>
               </div>
