@@ -13,6 +13,7 @@ import {
   Star,
   Building2,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
@@ -22,7 +23,7 @@ import { fetchListings } from "@/store/features/listings/listingsSlice";
 import { fetchUserBusinesses } from "@/store/features/business/businessSlice";
 
 const HostDashboard = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { items: listings, loading: listingsLoading } = useAppSelector(
@@ -42,6 +43,14 @@ const HostDashboard = () => {
       dispatch(fetchUserBusinesses(user.id));
     }
   }, [user, dispatch]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pt-20 pb-12 px-6 lg:px-12 flex items-center justify-center">
+        <Loader2 className="animate-spin text-zinc-400" size={32} />
+      </div>
+    );
+  }
 
   const handleAddListing = () => {
     if (businesses.length === 0) {

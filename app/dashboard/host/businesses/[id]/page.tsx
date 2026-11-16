@@ -25,7 +25,7 @@ import { Business } from "@/store/features/business/businessSlice";
 
 const BusinessDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { user, showToast } = useAuth();
+  const { user, showToast, loading: authLoading } = useAuth();
   const router = useRouter();
   const dispatch = useAppDispatch();
 
@@ -120,7 +120,7 @@ const BusinessDetailPage = () => {
     }
   };
 
-  if (businessLoading && !business) {
+  if (authLoading || (businessLoading && !business)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <Loader2 className="animate-spin text-zinc-400" size={32} />

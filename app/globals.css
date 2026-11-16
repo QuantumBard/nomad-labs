@@ -6,6 +6,12 @@
   --primary: #2d4a3e;
   --accent: #d4af37;
   --glass: rgba(0, 0, 0, 0.05);
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --card: #fafafa;
+  --card-foreground: #18181b;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
 }
 
 .dark {
@@ -14,6 +20,12 @@
   --primary: #2d4a3e;
   --accent: #d4af37;
   --glass: rgba(255, 255, 255, 0.05);
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --border: #27272a;
+  --input: #27272a;
 }
 
 @theme inline {
@@ -22,6 +34,12 @@
   --color-accent: var(--accent);
   --color-primary: var(--primary);
   --color-glass: var(--glass);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
   --font-abril: var(--font-abril);
   --font-antonio: var(--font-antonio);
   --font-anta: var(--font-anta);

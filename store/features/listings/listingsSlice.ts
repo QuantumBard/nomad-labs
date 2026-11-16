@@ -43,7 +43,7 @@ export const fetchListings = createAsyncThunk(
   "listings/fetchListings",
   async (
     { profileId, businessId }: { profileId?: string; businessId?: string },
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
       let query = supabase.from("listings").select("*");
@@ -51,10 +51,9 @@ export const fetchListings = createAsyncThunk(
       if (businessId) {
         query = query.eq("business_id", businessId);
       } else if (profileId) {
-        // Fallback for legacy or user-based lookups
         query = query.eq("profile_id", profileId);
       } else {
-        throw new Error("Most provide either businessId or profileId");
+        throw new Error("Must provide either businessId or profileId");
       }
 
       const { data, error } = await query.order("created_at", {
@@ -66,7 +65,37 @@ export const fetchListings = createAsyncThunk(
     } catch (err: any) {
       return rejectWithValue(err.message);
     }
-  }
+  },
+);
+
+export const fetchPublicListings = createAsyncThunk(
+  "listings/fetchPublicListings",
+  async (
+    {
+      listingType,
+      listingTypes,
+    }: { listingType?: string; listingTypes?: string[] } = {},
+    { rejectWithValue },
+  ) => {
+    try {
+      let query = supabase.from("listings").select("*").eq("status", "active");
+
+      if (listingType) {
+        query = query.eq("listing_type", listingType);
+      } else if (listingTypes && listingTypes.length > 0) {
+        query = query.in("listing_type", listingTypes);
+      }
+
+      const { data, error } = await query.order("created_at", {
+        ascending: false,
+      });
+
+      if (error) throw error;
+      return data as Listing[];
+    } catch (err: any) {
+      return rejectWithValue(err.message);
+    }
+  },
 );
 
 export const createListing = createAsyncThunk(
@@ -78,7 +107,7 @@ export const createListing = createAsyncThunk(
       userId,
       businessId,
     }: { listingData: any; images: File[]; userId: string; businessId: string },
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
       if (!businessId)
@@ -135,7 +164,7 @@ export const createListing = createAsyncThunk(
           // Including it ensures backward compat if the column is still NOT NULL
           profile_id: userId,
           photos: photoUrls,
-          status: "Active", // or 'inactive' based on your new schema default
+          status: "active", // or 'inactive' based on your new schema default
           created_at: new Date().toISOString(),
           total_units: listingData.total_units || 1,
         })
@@ -152,7 +181,7 @@ export const createListing = createAsyncThunk(
       console.error("Error in createListing thunk:", err);
       return rejectWithValue(err.message || "An unknown error occurred");
     }
-  }
+  },
 );
 
 const listingsSlice = createSlice({
@@ -191,6 +220,18 @@ const listingsSlice = createSlice({
       })
       .addCase(createListing.rejected, (state, action) => {
         state.uploading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(fetchPublicListings.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchPublicListings.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+      })
+      .addCase(fetchPublicListings.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload as string;
       });
   },

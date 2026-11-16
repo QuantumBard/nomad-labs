@@ -40,6 +40,10 @@ export const fetchUserBusinesses = createAsyncThunk(
   "business/fetchUserBusinesses",
   async (userId: string, { rejectWithValue }) => {
     try {
+      if (!userId) {
+        throw new Error("User ID is required");
+      }
+
       // 1. Fetch businesses owned by user
       const { data: ownedBusinesses, error: ownerError } = await supabase
         .from("businesses")
@@ -56,9 +60,9 @@ export const fetchUserBusinesses = createAsyncThunk(
 
       if (managerError) throw managerError;
 
-      const managedBusinesses = managedBusinessLinks.map(
+      const managedBusinesses = managedBusinessLinks?.map(
         (link: any) => link.businesses
-      );
+      ) || [];
 
       // Combine and deduplicate
       const allBusinesses = [
@@ -71,7 +75,8 @@ export const fetchUserBusinesses = createAsyncThunk(
 
       return uniqueBusinesses;
     } catch (err: any) {
-      return rejectWithValue(err.message);
+      console.error("Error fetching businesses:", err);
+      return rejectWithValue(err.message || "Failed to fetch businesses");
     }
   }
 );

@@ -1,73 +1,46 @@
+"use client";
+
 import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Star, MapPin } from "lucide-react";
+import { Star, MapPin, Loader2 } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { fetchPublicListings } from "@/store/features/listings/listingsSlice";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const STAYS = [
-  {
-    id: 1,
-    name: "The Obsidian Retreat",
-    location: "Reykjavík, Iceland",
-    rating: 4.9,
-    price: "₹70,000",
-    image:
-      "https://images.unsplash.com/photo-1518732714860-b62714ce0c59?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 2,
-    name: "Canyon Mirage",
-    location: "Arizona, USA",
-    rating: 4.8,
-    price: "₹1,00,000",
-    image:
-      "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 3,
-    name: "Verdant Villa",
-    location: "Ubud, Bali",
-    rating: 5.0,
-    price: "₹50,000",
-    image:
-      "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 4,
-    name: "Alpine Glasshouse",
-    location: "Zermatt, Switzerland",
-    rating: 4.9,
-    price: "₹1,20,000",
-    image:
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=800",
-  },
-];
-
 const FeaturedStays: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const { items: listings, loading } = useAppSelector((state) => state.listings);
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    cardRefs.current.forEach((el, i) => {
-      if (!el) return;
-      gsap.fromTo(
-        el,
-        { y: 100, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 1,
-          delay: i * 0.1,
-          scrollTrigger: {
-            trigger: el,
-            start: "top 85%",
-            toggleActions: "play none none reverse",
-          },
-        }
-      );
-    });
-  }, []);
+    dispatch(fetchPublicListings({ listingType: "stay" }));
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!loading && listings.length > 0) {
+      cardRefs.current.forEach((el, i) => {
+        if (!el) return;
+        gsap.fromTo(
+          el,
+          { y: 100, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 1,
+            delay: i * 0.1,
+            scrollTrigger: {
+              trigger: el,
+              start: "top 85%",
+              toggleActions: "play none none reverse",
+            },
+          }
+        );
+      });
+    }
+  }, [loading, listings.length]);
 
   return (
     <section className="py-24 bg-white dark:bg-zinc-950">
@@ -87,52 +60,67 @@ const FeaturedStays: React.FC = () => {
           </button>
         </div>
 
-        <div
-          ref={containerRef}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-        >
-          {STAYS.map((stay, i) => (
-            <div
-              key={stay.id}
-              // Fixed: Ref callback must return void, not the assigned element to satisfy TypeScript constraints.
-              ref={(el) => {
-                cardRefs.current[i] = el;
-              }}
-              className="group cursor-pointer"
-            >
-              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl mb-4 bg-zinc-200 dark:bg-zinc-800">
-                <img
-                  src={stay.image}
-                  alt={stay.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute top-4 right-4 bg-white/90 dark:bg-zinc-900/90 backdrop-blur px-2 py-1 rounded-lg flex items-center space-x-1 shadow-sm">
-                  <Star size={14} className="text-yellow-500 fill-yellow-500" />
-                  <span className="text-xs font-bold dark:text-white">
-                    {stay.rating}
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center text-zinc-500 dark:text-zinc-400 text-xs">
-                  <MapPin size={12} className="mr-1" />
-                  <span>{stay.location}</span>
-                </div>
-                <h3 className="text-zinc-900 dark:text-white font-semibold text-lg">
-                  {stay.name}
-                </h3>
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-zinc-900 dark:text-white font-bold">
-                    {stay.price}{" "}
-                    <span className="text-xs font-normal text-zinc-500">
-                      / night
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="animate-spin text-zinc-400" size={32} />
+          </div>
+        ) : listings.length === 0 ? (
+          <div className="text-center py-20 text-zinc-500">
+            No featured stays available yet.
+          </div>
+        ) : (
+          <div
+            ref={containerRef}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          >
+            {listings.slice(0, 4).map((stay, i) => (
+              <div
+                key={stay.id}
+                ref={(el) => {
+                  cardRefs.current[i] = el;
+                }}
+                className="group cursor-pointer"
+              >
+                <div className="relative aspect-[4/5] overflow-hidden rounded-2xl mb-4 bg-zinc-200 dark:bg-zinc-800">
+                  {stay.photos?.[0] ? (
+                    <img
+                      src={stay.photos[0]}
+                      alt={stay.public_title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <MapPin size={40} className="text-zinc-400" />
+                    </div>
+                  )}
+                  <div className="absolute top-4 right-4 bg-white/90 dark:bg-zinc-900/90 backdrop-blur px-2 py-1 rounded-lg flex items-center space-x-1 shadow-sm">
+                    <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                    <span className="text-xs font-bold dark:text-white">
+                      {stay.status === "active" ? "4.8" : "N/A"}
                     </span>
-                  </span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center text-zinc-500 dark:text-zinc-400 text-xs">
+                    <MapPin size={12} className="mr-1" />
+                    <span>{stay.view_from_room || "Location not specified"}</span>
+                  </div>
+                  <h3 className="text-zinc-900 dark:text-white font-semibold text-lg">
+                    {stay.public_title}
+                  </h3>
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-zinc-900 dark:text-white font-bold">
+                      ${stay.base_nightly_rate}{" "}
+                      <span className="text-xs font-normal text-zinc-500">
+                        / night
+                      </span>
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

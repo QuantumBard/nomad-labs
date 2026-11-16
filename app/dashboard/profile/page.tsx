@@ -134,6 +134,7 @@ const ProfilePage = () => {
       // 1. Update Identity (Tier 1)
       await dispatch(
         updateProfile({
+          userId: user.id,
           updates: { display_name: formData.displayName },
           type: "identity",
         })
@@ -142,6 +143,7 @@ const ProfilePage = () => {
       // 2. Update Persona (Tier 2)
       await dispatch(
         updateProfile({
+          userId: user.id,
           updates: {
             bio: formData.bio,
             language: formData.language,
@@ -416,14 +418,14 @@ const ProfilePage = () => {
                     <h2 className="text-4xl font-abril text-foreground mb-2">
                       {formData.displayName || "Anonymous Nomad"}
                     </h2>
-                    <div className="flex items-center justify-center md:justify-start gap-4 text-zinc-500 dark:text-zinc-400">
+                    <div className="flex items-center justify-center md:justify-start gap-4 text-muted-foreground">
                       <span className="flex items-center gap-1.5 text-sm">
-                        <Mail size={14} className="text-zinc-400" />
+                        <Mail size={14} className="text-muted-foreground" />
                         {user?.email}
                       </span>
                       {formData.phoneNumber && (
                         <span className="flex items-center gap-1.5 text-sm">
-                          <Phone size={14} className="text-zinc-400" />
+                          <Phone size={14} className="text-muted-foreground" />
                           {formData.phoneNumber}
                         </span>
                       )}
@@ -439,12 +441,12 @@ const ProfilePage = () => {
 
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                     {formData.language && (
-                      <div className="flex items-center gap-2 px-4 py-2 bg-zinc-50 dark:bg-zinc-800 rounded-full text-xs font-medium text-zinc-600 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-700">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-full text-xs font-medium text-muted-foreground border border-border">
                         <Languages size={14} />
                         {formData.language}
                       </div>
                     )}
-                    <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/10 rounded-full text-xs font-semibold text-primary dark:text-primary border border-green-100 dark:border-green-900/30">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/10 rounded-full text-xs font-semibold text-primary border border-green-100 dark:border-green-900/30">
                       <ShieldCheck size={14} />
                       Verified Member
                     </div>
@@ -456,7 +458,7 @@ const ProfilePage = () => {
               {(formData.instagram ||
                 formData.twitter ||
                 formData.facebook) && (
-                <div className="mt-12 pt-8 border-t border-zinc-100 dark:border-zinc-800/50 flex items-center justify-center md:justify-start gap-6">
+                <div className="mt-12 pt-8 border-t border-border flex items-center justify-center md:justify-start gap-6">
                   {formData.instagram && (
                     <a
                       href={`https://instagram.com/${formData.instagram}`}

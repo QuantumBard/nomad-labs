@@ -11,10 +11,10 @@ import { Plus, Hotel, MapPin, Loader2, Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const BusinessListPage = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { businesses, loading } = useAppSelector((state) => state.business);
+  const { businesses, loading, error } = useAppSelector((state) => state.business);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newBusinessData, setNewBusinessData] = useState({
@@ -29,10 +29,30 @@ const BusinessListPage = () => {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
+    if (user && user.id) {
       dispatch(fetchUserBusinesses(user.id));
     }
   }, [user?.id, dispatch]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-8 pt-24">
+        <div className="max-w-6xl mx-auto flex justify-center py-20">
+          <Loader2 className="animate-spin text-zinc-400" size={32} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-8 pt-24">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-zinc-500">Please log in to view your businesses.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleCreateBusiness = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +105,18 @@ const BusinessListPage = () => {
           <div className="flex justify-center py-20">
             <Loader2 className="animate-spin text-zinc-400" size={32} />
           </div>
-        ) : businesses.length === 0 ? (
+        ) : error ? (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center">
+            <p className="text-red-600 dark:text-red-400 mb-2">Error loading businesses</p>
+            <p className="text-red-500 dark:text-red-500 text-sm">{error}</p>
+            <button 
+              onClick={() => user?.id && dispatch(fetchUserBusinesses(user.id))}
+              className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        ) : !businesses || businesses.length === 0 ? (
           <div className="bg-white dark:bg-zinc-900 rounded-3xl p-12 text-center border border-dashed border-zinc-300 dark:border-zinc-800">
             <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-6">
               <Building2 className="text-zinc-400" size={32} />

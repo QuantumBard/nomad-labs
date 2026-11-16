@@ -31,9 +31,10 @@ const Navbar: React.FC = () => {
   }, [dropdownOpen]);
 
   const navLinks = [
-    { name: "Stays", path: "/" },
-    { name: "Experiences", path: "#" },
-    { name: "Journal", path: "#" },
+    { name: "Reminders", path: "/reminders" },
+    { name: "Stays", path: "/stays" },
+    { name: "Experiences", path: "/experiences" },
+    { name: "Journal", path: "/journal" },
   ];
 
   return (

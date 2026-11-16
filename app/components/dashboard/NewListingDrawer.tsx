@@ -34,7 +34,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
   const { user } = useAuth();
   const dispatch = useAppDispatch();
   const { uploading, error: reduxError } = useAppSelector(
-    (state) => state.listings
+    (state) => state.listings,
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -83,7 +83,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
     setAmenities((prev) =>
       prev.includes(amenity)
         ? prev.filter((a) => a !== amenity)
-        : [...prev, amenity]
+        : [...prev, amenity],
     );
   };
 
@@ -116,7 +116,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
         file.name.toLowerCase().endsWith(".heic") ||
         file.name.toLowerCase().endsWith(".heif") ||
         file.type === "image/heic" ||
-        file.type === "image/heif"
+        file.type === "image/heif",
     );
 
     if (hasHeic) {
@@ -154,7 +154,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
           fileToProcess = new File(
             [blob],
             file.name.replace(/\.(heic|heif)$/i, ".jpg"),
-            { type: "image/jpeg" }
+            { type: "image/jpeg" },
           );
         } catch (err) {
           console.error("HEIC conversion failed:", err);
@@ -230,7 +230,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
       };
 
       const resultAction = await dispatch(
-        createListing({ listingData, images, userId: user.id, businessId })
+        createListing({ listingData, images, userId: user.id, businessId }),
       );
 
       if (createListing.fulfilled.match(resultAction)) {
@@ -249,7 +249,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end">
+    <div className="fixed inset-0 z-100 flex justify-end">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
@@ -307,6 +307,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
                   <option>Hotel Room</option>
                   <option>Hostel Bed</option>
                   <option>Entire Homestay</option>
+                  <option>Experience</option>
                 </select>
                 {listingType === "Hostel Bed" && (
                   <div className="mt-4 p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800">
@@ -338,7 +339,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
+                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2 flex items-center gap-2">
                     Internal Label
                     <Info size={14} className="text-zinc-400" />
                   </label>
@@ -716,7 +717,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
                           {item}
                         </span>
                       </label>
-                    )
+                    ),
                   )}
                 </div>
               </div>
@@ -833,7 +834,7 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
           <button
             onClick={handleSaveListing}
             disabled={loading || uploading}
-            className="flex-[2] py-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold hover:opacity-90 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-2 py-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold hover:opacity-90 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {(loading || uploading) && (
               <Loader2 size={18} className="animate-spin" />
@@ -841,8 +842,8 @@ const NewListingDrawer: React.FC<NewListingDrawerProps> = ({
             {uploading
               ? "Uploading Images..."
               : loading
-              ? "Saving..."
-              : "Save Listing"}
+                ? "Saving..."
+                : "Save Listing"}
           </button>
         </div>
       </div>

@@ -1,0 +1,188 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  displayName String?
+  photoUrl    String?
+  userType    UserType @default(TRAVELLER)
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  reminders FlightReminder[]
+  alerts    PriceAlert[]
+  searches  FlightSearch[]
+
+  @@map("users")
+}
+
+model FlightReminder {
+  id              String         @id @default(uuid())
+  userId          String         @map("user_id")
+  source          String
+  destination     String
+  sourceCode      String?        @map("source_code")
+  destinationCode String?        @map("destination_code")
+  startDate       DateTime       @map("start_date")
+  endDate         DateTime?      @map("end_date")
+  targetPrice     Float          @map("target_price")
+  currentPrice    Float?         @map("current_price")
+  averagePrice    Float?         @map("average_price")
+  status          ReminderStatus @default(ACTIVE)
+  isTriggered     Boolean        @default(false) @map("is_triggered")
+  triggeredAt     DateTime?      @map("triggered_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fareHistory FareHistory[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([source, destination])
+  @@map("flight_reminders")
+}
+
+model FareHistory {
+  id           String   @id @default(uuid())
+  reminderId   String   @map("reminder_id")
+  price        Float
+  airline      String?
+  flightNumber String?  @map("flight_number")
+  currency     String   @default("USD")
+  recordedAt   DateTime @default(now()) @map("recorded_at")
+
+  // Relations
+  reminder FlightReminder @relation(fields: [reminderId], references: [id], onDelete: Cascade)
+
+  @@index([reminderId])
+  @@index([recordedAt])
+  @@map("fare_history")
+}
+
+model FlightSearch {
+  id              String    @id @default(uuid())
+  userId          String?   @map("user_id")
+  source          String
+  destination     String
+  sourceCode      String?   @map("source_code")
+  destinationCode String?   @map("destination_code")
+  departureDate   DateTime  @map("departure_date")
+  returnDate      DateTime? @map("return_date")
+  adults          Int       @default(1)
+  currency        String    @default("USD")
+  searchParams    Json?     @map("search_params")
+  resultsCount    Int?      @map("results_count")
+  averagePrice    Float?    @map("average_price")
+  minPrice        Float?    @map("min_price")
+  maxPrice        Float?    @map("max_price")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("flight_searches")
+}
+
+model PriceAlert {
+  id                   String    @id @default(uuid())
+  userId               String    @map("user_id")
+  source               String
+  destination          String
+  targetPrice          Float     @map("target_price")
+  currentPrice         Float?    @map("current_price")
+  discountPercent      Float?    @map("discount_percent")
+  isActive             Boolean   @default(true) @map("is_active")
+  notificationChannels Json?     @map("notification_channels")
+  lastNotifiedAt       DateTime? @map("last_notified_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("price_alerts")
+}
+
+model ApiUsage {
+  id            String   @id @default(uuid())
+  endpoint      String
+  provider      String   @default("amadeus")
+  requestsCount Int      @default(1) @map("requests_count")
+  responseTime  Int?     @map("response_time_ms")
+  success       Boolean  @default(true)
+  errorMessage  String?  @map("error_message")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([provider])
+  @@map("api_usage")
+}
+
+enum UserType {
+  TRAVELLER
+  MANAGER
+  ADMIN
+  SUPPORT
+}
+
+enum ReminderStatus {
+  ACTIVE
+  TRIGGERED
+  EXPIRED
+  CANCELLED
+}
+
+enum FareTrend {
+  UP
+  DOWN
+  STABLE
+}
+
+model Route {
+  id                 String @id @default(uuid())
+  sourceAirport      String @map("source_airport")
+  destinationAirport String @map("destination_airport")
+
+  // Relations
+  snapshots FareSnapshot[]
+
+  @@unique([sourceAirport, destinationAirport])
+  @@map("routes")
+}
+
+model FareSnapshot {
+  id            String    @id @default(uuid())
+  routeId       String    @map("route_id")
+  departureDate DateTime  @map("departure_date")
+  returnDate    DateTime? @map("return_date")
+  price         Float
+  provider      String    @default("amadeus")
+  trend         FareTrend @default(STABLE)
+  fetchedAt     DateTime  @default(now()) @map("fetched_at")
+
+  // Relations
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@index([routeId])
+  @@index([departureDate])
+  @@index([fetchedAt])
+  @@map("fare_snapshots")
+}
